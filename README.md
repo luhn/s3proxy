@@ -12,7 +12,7 @@ HTTP Basic Auth.  This allows you to access private S3 files with virtually any
 HTTP implementation.  I initially wrote this project to host a private PyPI
 with S3.
 
-## Setup
+## Getting Started
 
 S3Proxy is a simple Flask app.  The app expects a `BUCKET_NAME` environment
 variable containing the name of the S3 bucket to proxy.  No other configuration
@@ -21,19 +21,14 @@ is required.
 Here's some simple commands to get you up and running:
 
 ```bash
-# Clone the project
-git clone https://github.com/luhn/s3proxy.git
-cd s3proxy/
-# Create a virtualenv
-virtualenv -p python3 env
-. env/bin/activate
-# Install the app
-python setup.py install
-# Configure and run the app
-export FLASK_APP=s3proxy.py
+pip install https://github.com/luhn/s3proxy/archive/master.zip
+export FLASK_APP=s3proxy
 export BUCKET_NAME=my-bucket
 flask run
 ```
+
+For deploying the app into production, see the [Flask
+documentation](http://flask.pocoo.org/docs/0.11/deploying/).
 
 ## Usage
 
