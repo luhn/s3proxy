@@ -47,5 +47,10 @@ def catch_all(path):
         abort(404)
     return render_template('index.html', path=path, items=items)
 
+
+@app.route('/check')
+def check():
+    return make_response('Healthy')
+
 if __name__ == '__main__':
     app.run()
