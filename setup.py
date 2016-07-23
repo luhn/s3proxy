@@ -4,7 +4,7 @@ setup(
     name='s3proxy',
     version='0.1.0',
     zip_safe=False,
-    packages=['s3proxy'],
+    py_modules=['s3proxy'],
     package_data={
         '': ['templates/*'],  # Include the template files
     },
