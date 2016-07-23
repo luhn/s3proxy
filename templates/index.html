@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Index of {{ path }}</title>
+	</head>
+	<body>
+		<h1>Index of {{ path }}</h1>
+		<p><a href="..">Back</a></p>
+		<ul>
+			{% for item in items %}
+				<li><a href="{{ item }}">{{ item }}</a></li>
+			{% endfor %}
+		</ul>
+	</body>
+</html>
