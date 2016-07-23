@@ -19,6 +19,8 @@ def catch_all(path):
                 obj['Body'].read()
             )
             response.mimetype = obj['ContentType']
+            expires = 60 * 60 * 24 * 365 * 2
+            response.headers.add('Cache-Control', 'max-age={}'.format(expires))
             return response
         except botocore.exceptions.ClientError as e:
             # Object doesn't exist
@@ -51,6 +53,7 @@ def catch_all(path):
 @app.route('/check')
 def check():
     return make_response('Healthy')
+
 
 if __name__ == '__main__':
     app.run()
