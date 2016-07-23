@@ -1,20 +1,44 @@
 import os
-from flask import Flask, make_response, render_template, redirect, abort
+from flask import Flask, request, make_response, render_template, redirect, abort
 import boto3
 import botocore
 
 app = Flask(__name__)
-client = boto3.client('s3')
-s3 = boto3.resource('s3')
-bucket = s3.Bucket(os.environ['BUCKET_NAME'])
+BUCKET_NAME = os.environ['BUCKET_NAME']
+
+
+def _make_client(auth):
+    if auth is None:
+        abort(401)
+    return boto3.client(
+        's3',
+        aws_access_key_id=auth.username,
+        aws_secret_access_key=auth.password,
+    )
+
+
+@app.errorhandler(401)
+def auth_required(e):
+    response = make_response('Provide your AWS credentials.')
+    response.status_code = 401
+    response.headers.add_header(
+        'WWW-Authenticate',
+        'Basic realm="Login Required"',
+    )
+    return response
+
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
     # First attempt to get object from S3.
+    s3 = _make_client(request.authorization)
     if path:
         try:
-            obj = bucket.Object(path).get()
+            obj = s3.get_object(
+                Bucket=BUCKET_NAME,
+                Key=path,
+            )
             response = make_response(
                 obj['Body'].read()
             )
@@ -23,8 +47,12 @@ def catch_all(path):
             response.headers.add('Cache-Control', 'max-age={}'.format(expires))
             return response
         except botocore.exceptions.ClientError as e:
-            # Object doesn't exist
-            if e.response['Error']['Code'] != 'NoSuchKey':
+            code = e.response['Error']['Code']
+            if code == 'NoSuchKey':
+                pass  # Object doesn't exist
+            elif code == 'InvalidAccessKeyId':
+                abort(403)
+            else:
                 raise
 
     # Make sure we're in a directory
@@ -32,11 +60,18 @@ def catch_all(path):
         return redirect(path + '/')
 
     # List the directory
-    results = client.list_objects(
-        Bucket=bucket.name,
-        Prefix=path,
-        Delimiter='/'
-    )
+    try:
+        results = s3.list_objects(
+            Bucket=BUCKET_NAME,
+            Prefix=path,
+            Delimiter='/'
+        )
+    except botocore.exceptions.ClientError as e:
+        code = e.response['Error']['Code']
+        if code == 'InvalidAccessKeyId':
+            abort(403)
+        else:
+            raise
     items = list()
     if 'CommonPrefixes' in results:
         items += [
