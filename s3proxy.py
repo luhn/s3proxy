@@ -1,5 +1,5 @@
 import os
-from flask import Flask, make_response, render_template, redirect
+from flask import Flask, make_response, render_template, redirect, abort
 import boto3
 import botocore
 
@@ -35,13 +35,16 @@ def catch_all(path):
         Prefix=path,
         Delimiter='/'
     )
-    if 'Contents' in results:
-        items = [result['Key'][len(path):] for result in results['Contents']]
-    elif 'CommonPrefixes' in results:
-        items = [
+    items = list()
+    if 'CommonPrefixes' in results:
+        items += [
             result['Prefix'].rstrip('/')
             for result in results['CommonPrefixes']
         ]
+    if 'Contents' in results:
+        items += [result['Key'][len(path):] for result in results['Contents']]
+    if not items:
+        abort(404)
     return render_template('index.html', path=path, items=items)
 
 if __name__ == '__main__':
