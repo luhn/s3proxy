@@ -47,8 +47,8 @@ def _get_object(s3, path):
         obj['Body'].read()
     )
     response.mimetype = obj['ContentType']
-    expires = 60 * 60 * 24 * 365 * 2
-    response.headers.add('Cache-Control', 'max-age={}'.format(expires))
+    if 'CacheControl' in obj:
+        response.headers.add('Cache-Control', obj['CacheControl'])
     return response
 
 
