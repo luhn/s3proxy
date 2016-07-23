@@ -28,38 +28,31 @@ def auth_required(e):
     return response
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def catch_all(path):
-    # First attempt to get object from S3.
-    s3 = _make_client(request.authorization)
-    if path:
-        try:
-            obj = s3.get_object(
-                Bucket=BUCKET_NAME,
-                Key=path,
-            )
-            response = make_response(
-                obj['Body'].read()
-            )
-            response.mimetype = obj['ContentType']
-            expires = 60 * 60 * 24 * 365 * 2
-            response.headers.add('Cache-Control', 'max-age={}'.format(expires))
-            return response
-        except botocore.exceptions.ClientError as e:
-            code = e.response['Error']['Code']
-            if code == 'NoSuchKey':
-                pass  # Object doesn't exist
-            elif code == 'InvalidAccessKeyId':
-                abort(403)
-            else:
-                raise
+def _get_object(s3, path):
+    try:
+        obj = s3.get_object(
+            Bucket=BUCKET_NAME,
+            Key=path,
+        )
+    except botocore.exceptions.ClientError as e:
+        code = e.response['Error']['Code']
+        if code == 'NoSuchKey':
+            return  # Object doesn't exist
+        elif code == 'InvalidAccessKeyId':
+            abort(403)
+        else:
+            raise
 
-    # Make sure we're in a directory
-    if path and not path.endswith('/'):
-        return redirect(path + '/')
+    response = make_response(
+        obj['Body'].read()
+    )
+    response.mimetype = obj['ContentType']
+    expires = 60 * 60 * 24 * 365 * 2
+    response.headers.add('Cache-Control', 'max-age={}'.format(expires))
+    return response
 
-    # List the directory
+
+def _list_directory(s3, path):
     try:
         results = s3.list_objects(
             Bucket=BUCKET_NAME,
@@ -74,12 +67,29 @@ def catch_all(path):
             raise
     items = list()
     if 'CommonPrefixes' in results:
-        items += [
-            result['Prefix'].rstrip('/')
-            for result in results['CommonPrefixes']
-        ]
+        items += [result['Prefix'] for result in results['CommonPrefixes']]
     if 'Contents' in results:
         items += [result['Key'][len(path):] for result in results['Contents']]
+    return items
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    s3 = _make_client(request.authorization)
+
+    # Attempt to get the object
+    if path:
+        obj = _get_object(s3, path)
+        if obj is not None:
+            return obj
+
+    # Make sure we're in a directory
+    if path and not path.endswith('/'):
+        return redirect(path + '/')
+
+    # List the directory
+    items = _list_directory(s3, path)
     if not items:
         abort(404)
     return render_template('index.html', path=path, items=items)
