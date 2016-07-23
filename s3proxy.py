@@ -52,7 +52,7 @@ def catch_all(path):
 
 @app.route('/check')
 def check():
-    return make_response('Healthy')
+    return 'Healthy'
 
 
 if __name__ == '__main__':
