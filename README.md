@@ -39,7 +39,7 @@ Fetching a directory will return a simple HTML index of the subdirectories and
 files in the directory.
 
 ```
-$ curl -u a:a http://localhost:5000/
+$ curl -u key:secret http://localhost:5000/
 <!DOCTYPE html>
 <html>
         <head>
@@ -61,7 +61,7 @@ Fetching a file will proxy that file.  The appropriate MIME type will be set,
 as well a `Cache-Control` header, if any.
 
 ```
-$ curl -I -u AKIAIFBWNUDIMG5YVZNQ:OV4CFKAOdRopdSu6Z4hC6ZcR9EYKBRQtZEs00ami localhost:5000/subdir/file.tar.gz
+$ curl -I -u key:secret localhost:5000/subdir/file.tar.gz
 HTTP/1.0 200 OK
 Content-Type: application/x-tar
 Content-Length: 32027
