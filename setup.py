@@ -1,13 +1,11 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='s3proxy',
     version='0.1.0',
     zip_safe=False,
-    py_modules=['s3proxy'],
-    package_data={
-        '': ['templates/*'],  # Include the template files
-    },
+    packages=['s3proxy'],
+    include_package_data=True,
     install_requires=[
         'Flask<0.12',
         'boto3<2',
